@@ -39,15 +39,9 @@ public class SharedRideApplication implements CommandLineRunner {
 		Properties streamsConfiguration = new Properties();
 		streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, "transport-matcher");
 		streamsConfiguration.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
-				"my-cluster-kafka-bootstrap-streams.apps.summithack-d65b.openshiftworkshop.com:443");
+				"hack-cluster-kafka-bootstrap.kafka.svc:9092");
 		streamsConfiguration.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.Long().getClass().getName());
 		streamsConfiguration.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.Long().getClass().getName());
-		// streamsConfiguration.put(StreamsConfig.STATE_DIR_CONFIG, System.getProperty("java.io.tmpdir"));
-		streamsConfiguration.put(StreamsConfig.SECURITY_PROTOCOL_CONFIG, "SSL");
-		streamsConfiguration.put("ssl.keystore.location", "src/main/resources/keystore.jks");
-		streamsConfiguration.put("ssl.keystore.password", "password");
-		streamsConfiguration.put("ssl.truststore.location", "src/main/resources/keystore.jks");
-		streamsConfiguration.put("ssl.truststore.password", "password");
 
 		// Serializers/deserializers (serde) for String and Long types
 		final Serde<String> stringSerde = Serdes.String();

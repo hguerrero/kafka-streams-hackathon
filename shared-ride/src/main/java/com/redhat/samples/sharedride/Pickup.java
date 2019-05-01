@@ -12,18 +12,28 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Pickup implements Serializer<Pickup>, Deserializer<Pickup>, Serde<Pickup> {
 
 	static Logger log = LoggerFactory.getLogger(Pickup.class);
 
-	static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+	static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+		.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
 	Timestamp arrivaltime;
 	String speakerName;
 	String status;
 	Integer traveler;
+
+	public Pickup() {}
+
+	public Pickup(Timestamp arrival, String name, Integer travelers) {
+		this.arrivaltime = arrival;
+		this.speakerName = name;
+		this.traveler = travelers;
+	}
 
 	@Override
 	public String toString() {
@@ -41,7 +51,7 @@ public class Pickup implements Serializer<Pickup>, Deserializer<Pickup>, Serde<P
 		} catch (Exception e) {
 			log.error("could not parse", e);
 		}
-		return null;
+		return new Pickup(new Timestamp(0), "No Speaker", 0);
 	}
 
 	public String getSpeakerName() {
