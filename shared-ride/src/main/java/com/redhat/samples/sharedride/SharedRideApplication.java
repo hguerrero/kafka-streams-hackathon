@@ -51,7 +51,7 @@ public class SharedRideApplication implements CommandLineRunner {
 		final StreamsBuilder builder = new StreamsBuilder();
 
 		// Construct a `KStream` from the input topic
-		KStream<String, String> pickups = builder.stream("pickups", Consumed.with(stringSerde, stringSerde));
+		KStream<String, String> pickups = builder.stream("user1-pickups", Consumed.with(stringSerde, stringSerde));
 		KStream<Long, Pickup> pickupTimes = pickups
 			.map((key, value) -> {
 				Pickup pickup = Pickup.parse(value);
@@ -63,13 +63,9 @@ public class SharedRideApplication implements CommandLineRunner {
 					() -> 0L, 
 					(aggKey, newValue, aggValue) -> aggValue + newValue.getTraveler());
 		
-		grouped.toStream().process(() -> new AbstractProcessor<Windowed<Long>, Long>() {
-				@Override
-				public void process(Windowed<Long> key, Long value) {
-					log.info("Pickup Time: " + SimpleDateFormat.getTimeInstance().format(new Timestamp(key.key())) + " Travelers: " + value);
-				}
-			});
-
+		grouped.toStream().peek( 
+			(key, value) -> log.info("Pickup Time: " + SimpleDateFormat.getTimeInstance().format(new Timestamp(key.key())) + " Travelers: " + value));
+			
 		final Topology topology = builder.build();
 
 		System.out.println(topology.describe());
