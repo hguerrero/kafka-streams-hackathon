@@ -51,21 +51,31 @@ public class SharedRideApplication implements CommandLineRunner {
 		final StreamsBuilder builder = new StreamsBuilder();
 
 		// Construct a `KStream` from the input topic
-		KStream<String, String> pickups = builder.stream("user1-pickups", Consumed.with(stringSerde, stringSerde));
-		KStream<Long, Pickup> pickupTimes = pickups
-			.map((key, value) -> {
-				Pickup pickup = Pickup.parse(value);
-				return KeyValue.pair(pickup.getArrivaltime().getTime(), pickup);
-			});
-		KTable<Windowed<Long>, Long> grouped = pickupTimes.groupByKey(Grouped.with(longSerde, pickupSerde))
-				.windowedBy(TimeWindows.of(Duration.ofMinutes(1)))
-				.aggregate(
-					() -> 0L, 
-					(aggKey, newValue, aggValue) -> aggValue + newValue.getTraveler());
+		// KStream<String, String> pickups = builder.stream("user1-pickups", Consumed.with(stringSerde, stringSerde));
+		// KStream<Long, Pickup> pickupTimes = pickups
+		// 	.map((key, value) -> {
+		// 		Pickup pickup = Pickup.parse(value);
+		// 		return KeyValue.pair(pickup.getArrivaltime().getTime(), pickup);
+		// 	});
+		// KTable<Windowed<Long>, Long> grouped = pickupTimes.groupByKey(Grouped.with(longSerde, pickupSerde))
+		// 		.windowedBy(TimeWindows.of(Duration.ofMinutes(1)))
+		// 		.aggregate(
+		// 			() -> 0L, 
+		// 			(aggKey, newValue, aggValue) -> aggValue + newValue.getTraveler());
 		
-		grouped.toStream().peek( 
-			(key, value) -> log.info("Pickup Time: " + SimpleDateFormat.getTimeInstance().format(new Timestamp(key.key())) + " Travelers: " + value));
+		// grouped.toStream().peek( 
+		// 	(key, value) -> log.info("Pickup Time: " + SimpleDateFormat.getTimeInstance().format(new Timestamp(key.key())) + " Travelers: " + value));
 			
+		KStream<String, String> uber = builder.stream("user1-uber", Consumed.with(stringSerde, stringSerde));
+		uber.map((key, value) -> {
+			Transport transport = Transport.parse(value);
+			transport.setCompany("uber");
+			return KeyValue.pair(transport.getCompany(), transport);
+		});
+		
+		uber.peek( 
+			(key, value) -> log.info("Data: " + key + "," + value));
+
 		final Topology topology = builder.build();
 
 		System.out.println(topology.describe());
