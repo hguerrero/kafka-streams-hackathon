@@ -71,9 +71,7 @@ public class SharedRideApplication implements CommandLineRunner {
 			Transport transport = Transport.parse(value);
 			transport.setCompany("uber");
 			return KeyValue.pair(transport.getCompany(), transport);
-		});
-		
-		uber.peek( 
+		}).peek( 
 			(key, value) -> log.info("Data: " + key + "," + value));
 
 		final Topology topology = builder.build();
