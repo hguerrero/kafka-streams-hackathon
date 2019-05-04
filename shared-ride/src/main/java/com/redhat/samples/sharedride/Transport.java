@@ -31,8 +31,8 @@ public class Transport implements Serializer<Transport>, Deserializer<Transport>
 	public Transport(
         String company, 
         Long pricePerMinute,
-        Integer availableSpace, 
         Integer timeToPickup,
+        Integer availableSpace, 
         Boolean available) {
         this.company = company;
         this.pricePerMinute = pricePerMinute;
