@@ -14,11 +14,13 @@ import org.apache.kafka.streams.StreamsConfig;
 import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.Grouped;
+import org.apache.kafka.streams.kstream.Joined;
 import org.apache.kafka.streams.kstream.KStream;
 import org.apache.kafka.streams.kstream.KTable;
+import org.apache.kafka.streams.kstream.Produced;
 import org.apache.kafka.streams.kstream.TimeWindows;
+import org.apache.kafka.streams.kstream.ValueJoiner;
 import org.apache.kafka.streams.kstream.Windowed;
-import org.apache.kafka.streams.processor.AbstractProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -37,42 +39,37 @@ public class SharedRideApplication implements CommandLineRunner {
 	@Override
 	public void run(String... args) throws Exception {
 		Properties streamsConfiguration = new Properties();
-		streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, "transport-matcher");
+
+		/* **** Replace 'x' with your user number **** */
+		streamsConfiguration.put(StreamsConfig.APPLICATION_ID_CONFIG, "userX-transport-matcher");
+
 		streamsConfiguration.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG,
 				"hack-cluster-kafka-bootstrap.kafka.svc:9092");
-		streamsConfiguration.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.Long().getClass().getName());
-		streamsConfiguration.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.Long().getClass().getName());
+		streamsConfiguration.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.Integer().getClass().getName());
+		streamsConfiguration.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.Integer().getClass().getName());
 
 		// Serializers/deserializers (serde) for String and Long types
 		final Serde<String> stringSerde = Serdes.String();
 		final Serde<Long> longSerde = Serdes.Long();
+		final Serde<Integer> integerSerde = Serdes.Integer();
 		final Serde<Pickup> pickupSerde = new Pickup();
+		final Serde<Transport> transportSerde = new Transport();
 
 		final StreamsBuilder builder = new StreamsBuilder();
 
-		// Construct a `KStream` from the input topic
-		// KStream<String, String> pickups = builder.stream("user1-pickups", Consumed.with(stringSerde, stringSerde));
-		// KStream<Long, Pickup> pickupTimes = pickups
-		// 	.map((key, value) -> {
-		// 		Pickup pickup = Pickup.parse(value);
-		// 		return KeyValue.pair(pickup.getArrivaltime().getTime(), pickup);
-		// 	});
-		// KTable<Windowed<Long>, Long> grouped = pickupTimes.groupByKey(Grouped.with(longSerde, pickupSerde))
-		// 		.windowedBy(TimeWindows.of(Duration.ofMinutes(1)))
-		// 		.aggregate(
-		// 			() -> 0L, 
-		// 			(aggKey, newValue, aggValue) -> aggValue + newValue.getTraveler());
-		
-		// grouped.toStream().peek( 
-		// 	(key, value) -> log.info("Pickup Time: " + SimpleDateFormat.getTimeInstance().format(new Timestamp(key.key())) + " Travelers: " + value));
+		// 1. Check how many passangers to pickup by time 
+		KStream<String, String> pickups = builder.stream("user1-pickups", Consumed.with(stringSerde, stringSerde));
+		KStream<Integer, String> pickupSpace = ...
 			
-		KStream<String, String> uber = builder.stream("user1-uber", Consumed.with(stringSerde, stringSerde));
-		uber.map((key, value) -> {
-			Transport transport = Transport.parse(value);
-			transport.setCompany("uber");
-			return KeyValue.pair(transport.getCompany(), transport);
-		}).peek( 
-			(key, value) -> log.info("Data: " + key + "," + value));
+		// 2. Check the cheapest ride by numer of available spaces
+		KStream<String, String> rides = builder.stream("user1-uber", Consumed.with(stringSerde, stringSerde));
+		KTable<Integer, Transport> cheapest = ...
+
+		// 3. Join the datasets to match time pickups with cheaper ride
+		KStream<Integer, String> matches = ...
+
+		// Send the results back to paste in the datasheet
+		matches.to("user1-results", Produced.with(integerSerde, stringSerde));
 
 		final Topology topology = builder.build();
 
@@ -80,13 +77,9 @@ public class SharedRideApplication implements CommandLineRunner {
 
 		KafkaStreams streams = new KafkaStreams(topology, streamsConfiguration);
 		
-		Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-				streams.close();
-            }
-		});
-		
-		streams.start();		
+		streams.cleanUp();
+		streams.start();	
+
+		Runtime.getRuntime().addShutdownHook(new Thread(streams::close));		
 	}
 }
